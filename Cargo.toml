@@ -1,0 +1,7 @@
+[package]
+name = "ggez_flip_test"
+version = "0.1.0"
+authors = ["Andrey Lesnikov <ozkriff@gmail.com>"]
+
+[dependencies]
+ggez = "0.4"
