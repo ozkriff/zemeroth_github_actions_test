@@ -1,0 +1,182 @@
+name: Release
+
+on: 
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        build: [linux, macos, win32, win64]
+
+        include:
+          - build: linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: zemeroth
+            archive: .tar.gz
+            type: application/gzip
+          - build: macos
+            os: macOS-latest
+            target: x86_64-apple-darwin
+            bin: zemeroth
+            archive: .tar.gz
+            type: application/gzip
+          - build: win32
+            os: windows-latest
+            rust: stable-i686-pc-windows-msvc
+            target: i686-pc-windows-msvc
+            bin: zemeroth.exe
+            archive: .zip
+            type: application/zip
+          - build: win64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: zemeroth.exe
+            archive: .zip
+            type: application/zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install packages (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install libx11-dev libxi-dev libgl1-mesa-dev
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust || 'stable' }}
+          target: ${{ matrix.target }}
+          profile: minimal
+          override: true
+
+      - name: Install resvg
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            cargo install resvg
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            cargo install resvg
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            curl -sL https://github.com/RazrFalcon/resvg/releases/download/v0.11.0/viewsvg-win.zip -O
+            7z x viewsvg-win.zip
+          else
+            echo "$RUNNER_OS not supported"
+            exit 1
+          fi
+
+      - name: Export assets
+        shell: bash
+        run: |
+          python ./utils/assets_export.py
+          ls -lR assets
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      - name: Package
+        id: package
+        shell: bash
+        env:
+          BUILD_NAME: ${{ matrix.build }}
+          ARCHIVE_EXT: ${{ matrix.archive }}
+        run: |
+          name=zemeroth
+          tag=$(git describe --tags --abbrev=0)
+          release_name="$name-$tag-$BUILD_NAME"
+          release_file="${release_name}${ARCHIVE_EXT}"
+          mkdir "$release_name"
+
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            strip -s "target/${{ matrix.target }}/release/${{ matrix.bin }}"
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            strip "target/${{ matrix.target }}/release/${{ matrix.bin }}"
+          fi
+
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} "$release_name"
+          cp -r README.md assets "$release_name"
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "$release_file" "$release_name"
+          else
+            tar czvf "$release_file" "$release_name"
+          fi
+
+          echo "::set-output name=asset_name::$release_file"
+          echo "::set-output name=asset_path::$release_file"
+
+      - name: Upload
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_name: ${{ steps.package.outputs.asset_name }}
+          asset_path: ${{ steps.package.outputs.asset_path }}
+          asset_content_type: ${{ matrix.type }}
+
+  wasm:
+    name: build (web)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          profile: minimal
+          override: true
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+
+      - name: Install resvg
+        run: cargo install resvg
+
+      - name: Export assets
+        run: python ./utils/assets_export.py
+
+      - name: Build
+        run: ./utils/wasm/build.sh
+
+      - name: Package
+        id: package
+        run: |
+          name=zemeroth
+          tag=$(git describe --tags --abbrev=0)
+          release_name="$name-$tag-web"
+          release_file="${release_name}.zip"
+          mkdir "$release_name"
+
+          cp README.md static/* "$release_name"
+
+          7z a "$release_file" "$release_name"
+
+          echo "::set-output name=asset_name::$release_file"
+          echo "::set-output name=asset_path::$release_file"
+
+      - name: Upload
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_name: ${{ steps.package.outputs.asset_name }}
+          asset_path: ${{ steps.package.outputs.asset_path }}
+          asset_content_type: application/zip
