@@ -1,0 +1,12 @@
+[package]
+name = "zscene"
+version = "0.1.0"
+authors = ["Andrey Lesnikov <ozkriff@gmail.com>"]
+edition = "2018"
+license = "MIT/Apache-2.0"
+description = "Scene and Actions for gwg"
+keywords = ["gamedev", "2D"]
+
+[dependencies]
+cgmath = { version = "0.17", features = ["mint"] }
+gwg = { git = "https://github.com/not-fl3/good-web-game", package = "good-web-game" }
