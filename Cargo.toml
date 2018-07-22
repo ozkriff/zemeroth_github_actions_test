@@ -3,5 +3,13 @@ name = "ggez_flip_test"
 version = "0.1.0"
 authors = ["Andrey Lesnikov <ozkriff@gmail.com>"]
 
+[[bin]]
+name = "window_coords"
+path = "src/window_coords.rs"
+
+[[bin]]
+name = "absolute_coords"
+path = "src/absolute_coords.rs"
+
 [dependencies]
 ggez = "0.4"
