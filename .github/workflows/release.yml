@@ -136,74 +136,74 @@ jobs:
           asset_path: ${{ steps.package.outputs.asset_path }}
           asset_content_type: ${{ matrix.type }}
 
-  wasm:
-    name: build (web)
-    needs: [assets]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
-
-      - name: Install cargo-web
-        run: |
-          CARGO_WEB_RELEASE=$(curl -L -s -H 'Accept: application/json' https://github.com/koute/cargo-web/releases/latest)
-          CARGO_WEB_VERSION=$(echo $CARGO_WEB_RELEASE | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
-          CARGO_WEB_HOST_TRIPLE="x86_64-unknown-linux-gnu"
-          CARGO_WEB_URL="https://github.com/koute/cargo-web/releases/download/$CARGO_WEB_VERSION/cargo-web-$CARGO_WEB_HOST_TRIPLE.gz"
-
-          echo "Downloading cargo-web from: $CARGO_WEB_URL"
-          curl -L $CARGO_WEB_URL | gzip -d > cargo-web
-          chmod +x cargo-web
-
-          mkdir -p ~/.cargo/bin
-          mv cargo-web ~/.cargo/bin
-
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Checkout assets
-        uses: actions/checkout@v2
-        with:
-          repository: ozkriff/zemeroth_assets
-          path: assets
-
-      - name: Build
-        run: |
-          cargo web build --release
-
-      - name: Package
-        id: package
-        run: |
-          name=zemeroth
-          tag=$(git describe --tags --abbrev=0)
-          release_name="$name-$tag-web"
-          release_file="${release_name}.zip"
-          mkdir "$release_name"
-
-          cp target/wasm32-unknown-unknown/release/zemeroth.js "$release_name"
-          cp target/wasm32-unknown-unknown/release/zemeroth.wasm "$release_name"
-          cp README.md utils/wasm/index.html "$release_name"
-
-          ls assets | sed 's:^:/:' > "$release_name"/index.txt
-          find assets -type f -not -path '*/.git/*' -exec cp '{}' $release_name \;
-
-          7z a "$release_file" "$release_name"
-
-          echo "::set-output name=asset_name::$release_file"
-          echo "::set-output name=asset_path::$release_file"
-
-      - name: Upload
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_name: ${{ steps.package.outputs.asset_name }}
-          asset_path: ${{ steps.package.outputs.asset_path }}
-          asset_content_type: application/zip
+# TODO: needs to be updated for modern gwg
+#  wasm:
+#    name: build (web)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Install rust
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          target: wasm32-unknown-unknown
+#          profile: minimal
+#          override: true
+#
+#      - name: Install cargo-web
+#        run: |
+#          CARGO_WEB_RELEASE=$(curl -L -s -H 'Accept: application/json' https://github.com/koute/cargo-web/releases/latest)
+#          CARGO_WEB_VERSION=$(echo $CARGO_WEB_RELEASE | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
+#          CARGO_WEB_HOST_TRIPLE="x86_64-unknown-linux-gnu"
+#          CARGO_WEB_URL="https://github.com/koute/cargo-web/releases/download/$CARGO_WEB_VERSION/cargo-web-$CARGO_WEB_HOST_TRIPLE.gz"
+#
+#          echo "Downloading cargo-web from: $CARGO_WEB_URL"
+#          curl -L $CARGO_WEB_URL | gzip -d > cargo-web
+#          chmod +x cargo-web
+#
+#          mkdir -p ~/.cargo/bin
+#          mv cargo-web ~/.cargo/bin
+#
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Checkout assets
+#        uses: actions/checkout@v2
+#        with:
+#          repository: ozkriff/zemeroth_assets
+#          path: assets
+#
+#      - name: Build
+#        run: |
+#          cargo web build --release
+#
+#      - name: Package
+#        id: package
+#        run: |
+#          name=zemeroth
+#          tag=$(git describe --tags --abbrev=0)
+#          release_name="$name-$tag-web"
+#          release_file="${release_name}.zip"
+#          mkdir "$release_name"
+#
+#          cp target/wasm32-unknown-unknown/release/zemeroth.js "$release_name"
+#          cp target/wasm32-unknown-unknown/release/zemeroth.wasm "$release_name"
+#          cp README.md utils/wasm/index.html "$release_name"
+#
+#          ls assets | sed 's:^:/:' > "$release_name"/index.txt
+#          find assets -type f -not -path '*/.git/*' -exec cp '{}' $release_name \;
+#
+#          7z a "$release_file" "$release_name"
+#
+#          echo "::set-output name=asset_name::$release_file"
+#          echo "::set-output name=asset_path::$release_file"
+#
+#      - name: Upload
+#        uses: actions/upload-release-asset@v1.0.1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ github.event.release.upload_url }}
+#          asset_name: ${{ steps.package.outputs.asset_name }}
+#          asset_path: ${{ steps.package.outputs.asset_path }}
+#          asset_content_type: application/zip
