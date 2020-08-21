@@ -89,17 +89,16 @@ jobs:
           profile: minimal
           override: true
 
-      # - name: Install resvg
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: install
-      #     args: resvg
+      - name: Install packages (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install libasound2-dev libudev-dev
 
       - name: Install resvg
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt-get -yq --no-install-suggests --no-install-recommends install ${{ matrix.packages }}
             cargo install resvg
           elif [ "$RUNNER_OS" == "macOS" ]; then
             cargo install resvg
