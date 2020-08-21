@@ -46,8 +46,7 @@ jobs:
       - name: Install packages (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install libasound2-dev libudev-dev
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install libx11-dev libxi-dev libgl1-mesa-dev
 
       - name: Install Python
         uses: actions/setup-python@v2
