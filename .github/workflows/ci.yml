@@ -90,10 +90,9 @@ jobs:
           override: true
 
       - name: Install packages (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.packages
         run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install libasound2-dev libudev-dev
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install ${{ matrix.packages }}
 
       - name: Install resvg
         shell: bash
