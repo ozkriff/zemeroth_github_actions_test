@@ -107,7 +107,6 @@ jobs:
 
           cp target/${{ matrix.target }}/release/${{ matrix.bin }} "$release_name"
           cp -r README.md assets "$release_name"
-          rm -rf "$release_name"/assets/.git
 
           if [ "${{ runner.os }}" = "Windows" ]; then
             7z a "$release_file" "$release_name"
