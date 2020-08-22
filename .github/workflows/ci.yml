@@ -11,6 +11,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - uses: octocat/say-hello@v1
+        with:
+          name: OctoCat
+
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
