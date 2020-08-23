@@ -3,19 +3,16 @@ name: CI
 on: [pull_request, push]
 
 jobs:
-  format:
-    name: Rustfmt
+  lints:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - uses: octocat/say-hello@v1
-        with:
-          name: OctoCat
+      - name: install-packages
+        run: sudo apt-get -yq --no-install-suggests --no-install-recommends install libx11-dev libxi-dev libgl1-mesa-dev
 
-      - name: Install rust
+      - name: install-rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -23,33 +20,13 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Run rustfmt
+      - name: fmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install packages
-        run: |
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install libx11-dev libxi-dev libgl1-mesa-dev
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
-          profile: minimal
-          override: true
-
-      - name: Run clippy
+      - name: clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
